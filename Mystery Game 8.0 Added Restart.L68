@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 05/03/2026 15:53:59
+Created On: 05/03/2026 19:39:26
 
 00000000                             1  ;----------------------------------------------------------------------*
 00000000                             2  ; NAME: Emmett Leahy
@@ -8,434 +8,422 @@ Created On: 05/03/2026 15:53:59
 00000000                             4  ; DESCRIPTION: The Mystery of Blackwood Cabin - A menu based
 00000000                             5  ; detective game where players read clues and interrogate
 00000000                             6  ; suspects before making a final accusation.
-00000000                             7  ;
-00000000                             8  ; INTERMEDIATE FEATURES:
-00000000                             9  ;   - Turns Remaining (D3): starts at 8, costs 1 per action
-00000000                            10  ;     If turns reach 0 the killer escapes - game over
-00000000                            11  ;   - Evidence Points (D4): gained by examining scenes (+2 each)
-00000000                            12  ;     Talking to Martha gives +1 bonus evidence
-00000000                            13  ;     Need 4+ evidence points to make an accusation
-00000000                            14  ;   - SHOW_STATUS prints both counters before each menu
-00000000                            15  ;   - RESTART_GAME subroutine: after a wrong accusation,
-00000000                            16  ;     prompts the player to try again (1=Yes, 2=No).
-00000000                            17  ;     Yes resets D3 and D4 and restarts from MAIN_MENU.
-00000000                            18  ;     No halts the simulator.
-00000000                            19  ;----------------------------------------------------------------------*
-00000000                            20  
-00001000                            21      ORG     $1000
-00001000                            22  
-00001000                            23  ;-------------------------------------------------------
-00001000                            24  ; REGISTER MAP
-00001000                            25  ; D3 = Turns Remaining  (starts at 8)
-00001000                            26  ; D4 = Evidence Points  (starts at 0, max 10)
-00001000                            27  ; D0 = TRAP task code   (scratch)
-00001000                            28  ; D1 = User input       (scratch)
-00001000                            29  ; A1 = String pointer   (scratch)
-00001000                            30  ;-------------------------------------------------------
-00001000                            31  
-00001000                            32  ;-------------------------------------------------------
-00001000                            33  ; START OF GAME - INITIALISE RESOURCES
-00001000                            34  ;-------------------------------------------------------
-00001000                            35  START:
-00001000  163C 0008                 36      MOVE.B  #8,D3               ; Turns Remaining = 8
-00001004  4284                      37      CLR.L   D4                  ; Evidence Points = 0
-00001006  6100 02A4                 38      BSR     PRINT_INTRO         ; Print the opening story
-0000100A                            39  
-0000100A                            40  ;-------------------------------------------------------
-0000100A                            41  ; MAIN MENU
-0000100A                            42  ;-------------------------------------------------------
-0000100A                            43  MAIN_MENU:
-0000100A  6100 025A                 44      BSR     SHOW_STATUS         ; Show Turns and Evidence before menu
-0000100E  6100 02AA                 45      BSR     ENDL
-00001012  43F9 00001466             46      LEA     MENU_MSG,A1
-00001018  103C 000E                 47      MOVE.B  #14,D0
-0000101C  4E4F                      48      TRAP    #15
-0000101E                            49  
-0000101E  103C 0004                 50      MOVE.B  #4,D0               ; Read integer into D1
-00001022  4E4F                      51      TRAP    #15
-00001024                            52  
-00001024                            53      ; --- Error Handling: Range Check (0 to 7) ---
-00001024  B23C 0000                 54      CMP.B   #0,D1               ; Check if input is less than 0
-00001028  6D00 029E                 55      BLT     INVALID_INPUT
-0000102C  B23C 0007                 56      CMP.B   #7,D1               ; Check if input is greater than 7
-00001030  6E00 0296                 57      BGT     INVALID_INPUT
-00001034                            58  
-00001034                            59      ; --- Branching based on valid player input ---
-00001034  B23C 0001                 60      CMP.B   #1,D1
-00001038  6700 003C                 61      BEQ     EXAMINE_SCENE
-0000103C  B23C 0002                 62      CMP.B   #2,D1
-00001040  6700 0066                 63      BEQ     EXAMINE_LIBRARY
-00001044  B23C 0003                 64      CMP.B   #3,D1
-00001048  6700 0090                 65      BEQ     EXAMINE_KITCHEN
-0000104C  B23C 0004                 66      CMP.B   #4,D1
-00001050  6700 00BA                 67      BEQ     TALK_ELEANOR
-00001054  B23C 0005                 68      CMP.B   #5,D1
-00001058  6700 00CA                 69      BEQ     TALK_JULIAN
-0000105C  B23C 0006                 70      CMP.B   #6,D1
-00001060  6700 00DA                 71      BEQ     TALK_MARTHA
-00001064  B23C 0007                 72      CMP.B   #7,D1
-00001068  6700 0104                 73      BEQ     CHECK_EVIDENCE      ; Gate accusation on evidence count
-0000106C  B23C 0000                 74      CMP.B   #0,D1
-00001070  6700 018A                 75      BEQ     QUIT_GAME
-00001074                            76  
-00001074                            77      ; If invalid input, loop back (no turn cost for bad input)
-00001074  6094                      78      BRA     MAIN_MENU
-00001076                            79  
-00001076                            80  ;-------------------------------------------------------
-00001076                            81  ; INVESTIGATION SUBROUTINES
-00001076                            82  ; Each action costs 1 turn. Scenes give +2 evidence.
-00001076                            83  ;-------------------------------------------------------
-00001076                            84  EXAMINE_SCENE:
-00001076  6100 01E4                 85      BSR     COST_TURN           ; -1 turn for this action
-0000107A  6100 023E                 86      BSR     ENDL
-0000107E  43F9 0000181F             87      LEA     SCENE_MSG,A1
-00001084  103C 000E                 88      MOVE.B  #14,D0
-00001088  4E4F                      89      TRAP    #15
-0000108A  5404                      90      ADD.B   #2,D4               ; +2 evidence points
-0000108C  B83C 000A                 91      CMP.B   #10,D4              ; Cap evidence at 10
-00001090  6F00 0006                 92      BLE     SCENE_DONE
-00001094  183C 000A                 93      MOVE.B  #10,D4
-00001098                            94  SCENE_DONE:
-00001098  43F9 000016C5             95      LEA     GAINED_MSG,A1       ; Print "+2 Evidence Points gained!"
-0000109E  103C 000E                 96      MOVE.B  #14,D0
-000010A2  4E4F                      97      TRAP    #15
-000010A4  6000 FF64                 98      BRA     MAIN_MENU
-000010A8                            99  
-000010A8                           100  EXAMINE_LIBRARY:
-000010A8  6100 01B2                101      BSR     COST_TURN
-000010AC  6100 020C                102      BSR     ENDL
-000010B0  43F9 000018A6            103      LEA     LIBRARY_MSG,A1
-000010B6  103C 000E                104      MOVE.B  #14,D0
-000010BA  4E4F                     105      TRAP    #15
-000010BC  5404                     106      ADD.B   #2,D4               ; +2 evidence points
-000010BE  B83C 000A                107      CMP.B   #10,D4
-000010C2  6F00 0006                108      BLE     LIBRARY_DONE
-000010C6  183C 000A                109      MOVE.B  #10,D4
-000010CA                           110  LIBRARY_DONE:
-000010CA  43F9 000016C5            111      LEA     GAINED_MSG,A1
-000010D0  103C 000E                112      MOVE.B  #14,D0
-000010D4  4E4F                     113      TRAP    #15
-000010D6  6000 FF32                114      BRA     MAIN_MENU
-000010DA                           115  
-000010DA                           116  EXAMINE_KITCHEN:
-000010DA  6100 0180                117      BSR     COST_TURN
-000010DE  6100 01DA                118      BSR     ENDL
-000010E2  43F9 00001940            119      LEA     KITCHEN_MSG,A1
-000010E8  103C 000E                120      MOVE.B  #14,D0
-000010EC  4E4F                     121      TRAP    #15
-000010EE  5404                     122      ADD.B   #2,D4               ; +2 evidence points
-000010F0  B83C 000A                123      CMP.B   #10,D4
-000010F4  6F00 0006                124      BLE     KITCHEN_DONE
-000010F8  183C 000A                125      MOVE.B  #10,D4
-000010FC                           126  KITCHEN_DONE:
-000010FC  43F9 000016C5            127      LEA     GAINED_MSG,A1
-00001102  103C 000E                128      MOVE.B  #14,D0
-00001106  4E4F                     129      TRAP    #15
-00001108  6000 FF00                130      BRA     MAIN_MENU
-0000110C                           131  
-0000110C                           132  ;-------------------------------------------------------
-0000110C                           133  ; INTERROGATION SUBROUTINES
-0000110C                           134  ; Each costs 1 turn. Martha gives +1 bonus evidence.
-0000110C                           135  ;-------------------------------------------------------
-0000110C                           136  TALK_ELEANOR:
-0000110C  6100 014E                137      BSR     COST_TURN
-00001110  6100 01A8                138      BSR     ENDL
-00001114  43F9 000019E5            139      LEA     ELEANOR_MSG,A1
-0000111A  103C 000E                140      MOVE.B  #14,D0
-0000111E  4E4F                     141      TRAP    #15
-00001120  6000 FEE8                142      BRA     MAIN_MENU
-00001124                           143  
-00001124                           144  TALK_JULIAN:
-00001124  6100 0136                145      BSR     COST_TURN
-00001128  6100 0190                146      BSR     ENDL
-0000112C  43F9 00001A55            147      LEA     JULIAN_MSG,A1
-00001132  103C 000E                148      MOVE.B  #14,D0
-00001136  4E4F                     149      TRAP    #15
-00001138  6000 FED0                150      BRA     MAIN_MENU
-0000113C                           151  
-0000113C                           152  TALK_MARTHA:
-0000113C  6100 011E                153      BSR     COST_TURN
-00001140  6100 0178                154      BSR     ENDL
-00001144  43F9 00001ABA            155      LEA     MARTHA_MSG,A1
-0000114A  103C 000E                156      MOVE.B  #14,D0
-0000114E  4E4F                     157      TRAP    #15
-00001150  5204                     158      ADD.B   #1,D4               ; +1 bonus evidence (key witness)
-00001152  B83C 000A                159      CMP.B   #10,D4
-00001156  6F00 0006                160      BLE     MARTHA_DONE
-0000115A  183C 000A                161      MOVE.B  #10,D4
-0000115E                           162  MARTHA_DONE:
-0000115E  43F9 000016E5            163      LEA     MARTHA_BONUS_MSG,A1 ; Print "Key detail noted! +1 Evidence"
-00001164  103C 000E                164      MOVE.B  #14,D0
-00001168  4E4F                     165      TRAP    #15
-0000116A  6000 FE9E                166      BRA     MAIN_MENU
-0000116E                           167  
-0000116E                           168  ;-------------------------------------------------------
-0000116E                           169  ; EVIDENCE GATE - CHECK BEFORE ALLOWING ACCUSATION
-0000116E                           170  ;-------------------------------------------------------
-0000116E                           171  CHECK_EVIDENCE:
-0000116E  B83C 0004                172      CMP.B   #4,D4               ; Need at least 4 evidence points
-00001172  6C00 0016                173      BGE     ACCUSE_SUSPECT      ; Enough evidence -> proceed
-00001176  6100 0142                174      BSR     ENDL
-0000117A  43F9 0000170F            175      LEA     LOW_EVIDENCE_MSG,A1 ; Not enough evidence yet
-00001180  103C 000E                176      MOVE.B  #14,D0
-00001184  4E4F                     177      TRAP    #15
-00001186  6000 FE82                178      BRA     MAIN_MENU
-0000118A                           179  
-0000118A                           180  ;-------------------------------------------------------
-0000118A                           181  ; THE ACCUSATION (END OF GAME LOGIC)
-0000118A                           182  ;-------------------------------------------------------
-0000118A                           183  ACCUSE_SUSPECT:
-0000118A  6100 012E                184      BSR     ENDL
-0000118E  43F9 00001B39            185      LEA     ACCUSE_MSG,A1
-00001194  103C 000E                186      MOVE.B  #14,D0
-00001198  4E4F                     187      TRAP    #15
-0000119A                           188  
-0000119A  103C 0004                189      MOVE.B  #4,D0               ; Read integer
-0000119E  4E4F                     190      TRAP    #15
-000011A0                           191  
-000011A0                           192      ; --- Error Handling: Valid suspect range (1 to 3) ---
-000011A0  B23C 0001                193      CMP.B   #1,D1
-000011A4  6D00 0134                194      BLT     INVALID_ACCUSE
-000011A8  B23C 0003                195      CMP.B   #3,D1
-000011AC  6E00 012C                196      BGT     INVALID_ACCUSE
-000011B0                           197  
-000011B0                           198      ; The killer is Martha (option 3)
-000011B0  B23C 0003                199      CMP.B   #3,D1
-000011B4  6700 0006                200      BEQ     WIN_GAME
-000011B8  6000 0016                201      BRA     LOSE_GAME           ; Wrong suspect -> offer restart
-000011BC                           202  
-000011BC                           203  WIN_GAME:
-000011BC  6100 00FC                204      BSR     ENDL
-000011C0  43F9 00001B70            205      LEA     WIN_MSG,A1
-000011C6  103C 000E                206      MOVE.B  #14,D0
-000011CA  4E4F                     207      TRAP    #15
-000011CC  FFFF FFFF                208      SIMHALT                     ; End program
-000011D0                           209  
-000011D0                           210  ;-------------------------------------------------------
-000011D0                           211  ; LOSE_GAME
-000011D0                           212  ; Prints the failure message then calls RESTART_GAME
-000011D0                           213  ; to give the player the option to try again.
-000011D0                           214  ;-------------------------------------------------------
-000011D0                           215  LOSE_GAME:
-000011D0  6100 00E8                216      BSR     ENDL
-000011D4  43F9 00001BBF            217      LEA     LOSE_MSG,A1
-000011DA  103C 000E                218      MOVE.B  #14,D0
-000011DE  4E4F                     219      TRAP    #15
-000011E0  6100 001E                220      BSR     RESTART_GAME        ; Offer restart rather than halting
-000011E4  FFFF FFFF                221      SIMHALT                     ; Only reached if player chose No
-000011E8                           222  
-000011E8                           223  TIME_UP:
-000011E8  6100 00D0                224      BSR     ENDL
-000011EC  43F9 0000175F            225      LEA     TIMEUP_MSG,A1       ; Print time expired message
-000011F2  103C 000E                226      MOVE.B  #14,D0
-000011F6  4E4F                     227      TRAP    #15
-000011F8  FFFF FFFF                228      SIMHALT                     ; Killer escapes - no restart offered
-000011FC                           229  
-000011FC                           230  QUIT_GAME:
-000011FC  FFFF FFFF                231      SIMHALT
-00001200                           232  
-00001200                           233  ;-------------------------------------------------------
-00001200                           234  ; RESTART_GAME SUBROUTINE
-00001200                           235  ; Called after a wrong accusation (LOSE_GAME).
-00001200                           236  ; Asks the player if they want to try again.
-00001200                           237  ; Input:  D1 must be 1 (Yes) or 2 (No)
-00001200                           238  ; Output: Resets D3/D4 and jumps to MAIN_MENU (Yes)
-00001200                           239  ;         Returns to caller for SIMHALT (No)
-00001200                           240  ; Error:  Any value outside 1-2 re-prompts the question.
-00001200                           241  ;-------------------------------------------------------
-00001200                           242  RESTART_GAME:
-00001200  6100 00B8                243      BSR     ENDL
-00001204  43F9 000017AD            244      LEA     RESTART_MSG,A1      ; Print "Try again? (1=Yes, 2=No):"
-0000120A  103C 000E                245      MOVE.B  #14,D0
-0000120E  4E4F                     246      TRAP    #15
-00001210                           247  
-00001210  103C 0004                248      MOVE.B  #4,D0               ; Read integer into D1
-00001214  4E4F                     249      TRAP    #15
-00001216                           250  
-00001216                           251      ; --- Error Handling: Valid range (1 to 2) ---
-00001216  B23C 0001                252      CMP.B   #1,D1
-0000121A  6D00 002E                253      BLT     RESTART_INVALID
-0000121E  B23C 0002                254      CMP.B   #2,D1
-00001222  6E00 0026                255      BGT     RESTART_INVALID
-00001226                           256  
-00001226  B23C 0001                257      CMP.B   #1,D1
-0000122A  6700 0004                258      BEQ     RESTART_YES         ; Player chose Yes -> reset and replay
-0000122E  4E75                     259      RTS                         ; Player chose No -> return to LOSE_GAME -> SIMHALT
-00001230                           260  
-00001230                           261  RESTART_YES:
-00001230  163C 0008                262      MOVE.B  #8,D3               ; Reset Turns Remaining to 8
-00001234  4284                     263      CLR.L   D4                  ; Reset Evidence Points to 0
-00001236  6100 0082                264      BSR     ENDL
-0000123A  43F9 000017F1            265      LEA     RESTART_CONFIRM,A1  ; Print "Starting new case..."
-00001240  103C 000E                266      MOVE.B  #14,D0
-00001244  4E4F                     267      TRAP    #15
-00001246  6000 FDC2                268      BRA     MAIN_MENU           ; Jump back to main menu (bypass START/PRINT_INTRO)
-0000124A                           269  
-0000124A                           270  RESTART_INVALID:
-0000124A  6100 006E                271      BSR     ENDL
-0000124E  43F9 00001C10            272      LEA     ERR_MSG,A1          ; Print invalid selection message
-00001254  103C 000E                273      MOVE.B  #14,D0
-00001258  4E4F                     274      TRAP    #15
-0000125A  60A4                     275      BRA     RESTART_GAME        ; Re-prompt the restart question
-0000125C                           276  
-0000125C                           277  ;-------------------------------------------------------
-0000125C                           278  ; COST_TURN SUBROUTINE
-0000125C                           279  ; Deducts 1 from D3 (turns remaining).
-0000125C                           280  ; If D3 reaches 0, jumps to TIME_UP (game over).
-0000125C                           281  ; Called at the start of every investigation/interrogation.
-0000125C                           282  ;-------------------------------------------------------
-0000125C                           283  COST_TURN:
-0000125C  5303                     284      SUB.B   #1,D3               ; -1 turn
-0000125E  B63C 0000                285      CMP.B   #0,D3               ; Have all turns been used?
-00001262  6784                     286      BEQ     TIME_UP             ; Yes -> game over
-00001264  4E75                     287      RTS
-00001266                           288  
-00001266                           289  ;-------------------------------------------------------
-00001266                           290  ; SHOW_STATUS SUBROUTINE
-00001266                           291  ; Prints Turns Remaining and Evidence Points before each menu.
-00001266                           292  ; Uses TRAP #15 task 3 to print the integer values in D3/D4.
-00001266                           293  ;-------------------------------------------------------
-00001266                           294  SHOW_STATUS:
-00001266  43F9 00001663            295      LEA     STATUS_HDR,A1       ; "--- DETECTIVE STATUS ---"
-0000126C  103C 000E                296      MOVE.B  #14,D0
-00001270  4E4F                     297      TRAP    #15
-00001272  43F9 00001680            298      LEA     TURN_LBL,A1         ; "Turns Remaining : "
-00001278  103C 000E                299      MOVE.B  #14,D0
-0000127C  4E4F                     300      TRAP    #15
-0000127E  1203                     301      MOVE.B  D3,D1               ; Load turns into D1 for printing
-00001280  103C 0003                302      MOVE.B  #3,D0               ; TRAP task 3 = print integer in D1
-00001284  4E4F                     303      TRAP    #15
-00001286  6100 0032                304      BSR     ENDL
-0000128A  43F9 00001694            305      LEA     EVID_LBL,A1         ; "Evidence Points  : "
-00001290  103C 000E                306      MOVE.B  #14,D0
-00001294  4E4F                     307      TRAP    #15
-00001296  1204                     308      MOVE.B  D4,D1               ; Load evidence into D1 for printing
-00001298  103C 0003                309      MOVE.B  #3,D0               ; Print integer
-0000129C  4E4F                     310      TRAP    #15
-0000129E  43F9 000016A8            311      LEA     STATUS_FTR,A1       ; Closing separator line
-000012A4  103C 000E                312      MOVE.B  #14,D0
-000012A8  4E4F                     313      TRAP    #15
-000012AA  4E75                     314      RTS
-000012AC                           315  
-000012AC                           316  ;-------------------------------------------------------
-000012AC                           317  ; UTILITIES & ERROR HANDLING
-000012AC                           318  ;-------------------------------------------------------
-000012AC                           319  PRINT_INTRO:
-000012AC  43F9 000012EF            320      LEA     INTRO_MSG,A1
-000012B2  103C 000E                321      MOVE.B  #14,D0
-000012B6  4E4F                     322      TRAP    #15
-000012B8  4E75                     323      RTS
-000012BA                           324  
-000012BA                           325  ENDL:
-000012BA  43F9 000012EC            326      LEA     CRLF,A1
-000012C0  103C 000E                327      MOVE.B  #14,D0
-000012C4  4E4F                     328      TRAP    #15
-000012C6  4E75                     329      RTS
-000012C8                           330  
-000012C8                           331  ; --- Error handler for MAIN_MENU ---
-000012C8                           332  ; Triggered when D1 is outside range 0-7
-000012C8                           333  ; Prints error message and loops back to re-prompt (no turn cost)
-000012C8                           334  INVALID_INPUT:
-000012C8  61F0                     335      BSR     ENDL
-000012CA  43F9 00001C10            336      LEA     ERR_MSG,A1
-000012D0  103C 000E                337      MOVE.B  #14,D0
-000012D4  4E4F                     338      TRAP    #15
-000012D6  6000 FD32                339      BRA     MAIN_MENU
-000012DA                           340  
-000012DA                           341  ; --- Error handler for ACCUSE_SUSPECT ---
-000012DA                           342  ; Triggered when D1 is outside range 1-3
-000012DA                           343  ; Prints error message and loops back to re-prompt
-000012DA                           344  INVALID_ACCUSE:
-000012DA  61DE                     345      BSR     ENDL
-000012DC  43F9 00001C10            346      LEA     ERR_MSG,A1
-000012E2  103C 000E                347      MOVE.B  #14,D0
-000012E6  4E4F                     348      TRAP    #15
-000012E8  6000 FEA0                349      BRA     ACCUSE_SUSPECT
-000012EC                           350  
-000012EC                           351  ;-------------------------------------------------------
-000012EC                           352  ; DATA SECTION (STRINGS)
-000012EC                           353  ;-------------------------------------------------------
-000012EC= 0D 0A 00                 354  CRLF:           DC.B    13,10,0
-000012EF                           355  
-000012EF= 2A 2A 2A 2A 2A 2A ...    356  INTRO_MSG:      DC.B    '****************************************',13,10
-00001319= 2A 20 20 20 20 20 ...    357                  DC.B    '*                                      *',13,10
-00001343= 2A 20 54 48 45 20 ...    358                  DC.B    '* THE MYSTERY OF BLACKWOOD CABIN       *',13,10
-0000136D= 2A 20 20 20 20 20 ...    359                  DC.B    '*                                      *',13,10
-00001397= 2A 2A 2A 2A 2A 2A ...    360                  DC.B    '****************************************',13,10
-000013C1= 20 41 72 74 68 75 ...    361                  DC.B    ' Arthur Pendelton is dead. The blizzard',13,10
-000013EA= 20 68 6F 77 6C 73 ...    362                  DC.B    ' howls outside. You are the detective. ',13,10
-00001413= 20 59 6F 75 20 68 ...    363                  DC.B    ' You have 8 turns before the killer    ',13,10
-0000143C= 20 73 6C 69 70 73 ...    364                  DC.B    ' slips away into the storm!            ',13,10,0
-00001466                           365  
-00001466= 0D 0A 3D 3D 3D 3D ...    366  MENU_MSG:       DC.B    13,10,'========================================',13,10
-00001492= 7C 20 20 20 20 20 ...    367                  DC.B    '|          WHAT WILL YOU DO?           |',13,10
-000014BC= 3D 3D 3D 3D 3D 3D ...    368                  DC.B    '========================================',13,10
-000014E6= 20 2D 2D 2D 20 49 ...    369                  DC.B    ' --- INVESTIGATE ---',13,10
-000014FC= 20 20 31 2E 20 45 ...    370                  DC.B    '  1. Examine Crime Scene (Study)',13,10
-0000151E= 20 20 32 2E 20 45 ...    371                  DC.B    '  2. Examine the Library',13,10
-00001538= 20 20 33 2E 20 45 ...    372                  DC.B    '  3. Examine the Kitchen',13,10
-00001552= 20 2D 2D 2D 20 49 ...    373                  DC.B    ' --- INTERROGATE ---',13,10
-00001568= 20 20 34 2E 20 54 ...    374                  DC.B    '  4. Talk to Eleanor (The Wife)',13,10
-00001589= 20 20 35 2E 20 54 ...    375                  DC.B    '  5. Talk to Julian  (The Nephew)',13,10
-000015AC= 20 20 36 2E 20 54 ...    376                  DC.B    '  6. Talk to Martha  (The Housekeeper)',13,10
-000015D4= 20 2D 2D 2D 20 41 ...    377                  DC.B    ' --- ACTIONS ---',13,10
-000015E6= 20 20 37 2E 20 4D ...    378                  DC.B    '  7. MAKE AN ACCUSATION! (needs 4 evidence)',13,10
-00001613= 20 20 30 2E 20 51 ...    379                  DC.B    '  0. Quit Case',13,10
-00001623= 3D 3D 3D 3D 3D 3D ...    380                  DC.B    '========================================',13,10
-0000164D= 20 45 6E 74 65 72 ...    381                  DC.B    ' Enter Choice (0-7): ',0
-00001663                           382  
-00001663                           383  ; --- Status display strings ---
-00001663= 0D 0A 2D 2D 2D 20 ...    384  STATUS_HDR:     DC.B    13,10,'--- DETECTIVE STATUS ---',13,10,0
-00001680= 20 54 75 72 6E 73 ...    385  TURN_LBL:       DC.B    ' Turns Remaining : ',0
-00001694= 20 45 76 69 64 65 ...    386  EVID_LBL:       DC.B    ' Evidence Points : ',0
-000016A8= 0D 0A 2D 2D 2D 2D ...    387  STATUS_FTR:     DC.B    13,10,'------------------------',13,10,0
-000016C5                           388  
-000016C5                           389  ; --- Feedback strings ---
-000016C5= 3E 3E 20 2B 32 20 ...    390  GAINED_MSG:     DC.B    '>> +2 Evidence Points gained!',13,10,0
-000016E5= 3E 3E 20 4B 65 79 ...    391  MARTHA_BONUS_MSG: DC.B  '>> Key detail noted! +1 Evidence Point.',13,10,0
-0000170F= 21 21 20 4E 6F 74 ...    392  LOW_EVIDENCE_MSG: DC.B  '!! Not enough evidence to accuse yet.',13,10
-00001736= 21 21 20 4B 65 65 ...    393                  DC.B    '!! Keep investigating (need 4 points).',13,10,0
-0000175F= 21 21 20 54 69 6D ...    394  TIMEUP_MSG:     DC.B    '!! Time has run out. The killer escapes',13,10
-00001788= 20 20 20 69 6E 74 ...    395                  DC.B    '   into the blizzard. CASE FAILED.',13,10,0
-000017AD                           396  
-000017AD                           397  ; --- Restart strings ---
-000017AD= 0D 0A 54 68 65 20 ...    398  RESTART_MSG:    DC.B    13,10,'The real killer is still out there...',13,10
-000017D6= 54 72 79 20 61 67 ...    399                  DC.B    'Try again? (1=Yes, 2=No): ',0
-000017F1= 3E 3E 20 53 74 61 ...    400  RESTART_CONFIRM:DC.B    '>> Starting new case. Good luck, detective.',13,10,0
-0000181F                           401  
-0000181F                           402  ; --- Scene strings ---
-0000181F= 5B 53 54 55 44 59 ...    403  SCENE_MSG:      DC.B    '[STUDY] Arthur is slumped over his desk.',13,10
-00001849= 41 20 73 68 61 74 ...    404                  DC.B    'A shattered teacup lies on the floor.',13,10
-00001870= 54 68 65 72 65 20 ...    405                  DC.B    'There is a faint smell of bitter almonds (Cyanide).',13,10,0
-000018A6                           406  
-000018A6= 5B 4C 49 42 52 41 ...    407  LIBRARY_MSG:    DC.B    '[LIBRARY] A fire roars in the hearth. On a side table,',13,10
-000018DE= 79 6F 75 20 66 69 ...    408                  DC.B    'you find a freshly torn document. It looks like a will',13,10
-00001916= 63 75 74 74 69 6E ...    409                  DC.B    'cutting Eleanor out of the inheritance.',13,10,0
-00001940                           410  
-00001940= 5B 4B 49 54 43 48 ...    411  KITCHEN_MSG:    DC.B    '[KITCHEN] The smell of roast beef fills the room.',13,10
-00001973= 4E 65 61 72 20 74 ...    412                  DC.B    'Near the tea kettle, an empty vial labeled "Rat Poison"',13,10
-000019AC= 73 69 74 73 20 6F ...    413                  DC.B    'sits on the counter. The active ingredient is Cyanide.',13,10,0
-000019E5                           414  
-000019E5= 5B 45 4C 45 41 4E ...    415  ELEANOR_MSG:    DC.B    '[ELEANOR] "I was reading in the library. Arthur was furious',13,10
-00001A22= 61 62 6F 75 74 20 ...    416                  DC.B    'about his new book. I stayed far away from him."',13,10,0
-00001A55                           417  
-00001A55= 5B 4A 55 4C 49 41 ...    418  JULIAN_MSG:     DC.B    '[JULIAN] "I was chopping firewood out in the blizzard!',13,10
-00001A8D= 49 20 6F 6E 6C 79 ...    419                  DC.B    'I only came inside when Eleanor screamed."',13,10,0
-00001ABA                           420  
-00001ABA= 5B 4D 41 52 54 48 ...    421  MARTHA_MSG:     DC.B    '[MARTHA] "I was in the kitchen roasting the beef. The master',13,10
-00001AF8= 61 6C 77 61 79 73 ...    422                  DC.B    'always takes his tea alone at 4:00 PM. I left it at his door."',13,10,0
-00001B39                           423  
-00001B39= 0D 0A 57 68 6F 20 ...    424  ACCUSE_MSG:     DC.B    13,10,'Who is the killer? (1=Eleanor, 2=Julian, 3=Martha): ',0
-00001B70                           425  
-00001B70= 43 4F 52 52 45 43 ...    426  WIN_MSG:        DC.B    'CORRECT! Martha prepared the tea and poisoned it with cyanide.',13,10
-00001BB0= 43 41 53 45 20 43 ...    427                  DC.B    'CASE CLOSED.',13,10,0
-00001BBF                           428  
-00001BBF= 57 52 4F 4E 47 21 ...    429  LOSE_MSG:       DC.B    'WRONG! You arrested an innocent person. The real killer escaped.',13,10
-00001C01= 43 41 53 45 20 46 ...    430                  DC.B    'CASE FAILED.',13,10,0
-00001C10                           431  
-00001C10= 21 21 21 20 49 4E ...    432  ERR_MSG:        DC.B    '!!! INVALID SELECTION: Please enter a valid number !!!',13,10,0
-00001C49                           433  
-00001C49                           434      END START
+00000000                             7  ;----------------------------------------------------------------------*
+00000000                             8  
+00001000                             9      ORG     $1000
+00001000                            10  
+00001000                            11  ;-------------------------------------------------------
+00001000                            12  ; REGISTER MAP Reminder of register use (delete before submission)
+00001000                            13  ; D3 = Turns Remaining  
+00001000                            14  ; D4 = Evidence Points 
+00001000                            15  ; D0 = TRAP task code   
+00001000                            16  ; D1 = User input     
+00001000                            17  ; A1 = String pointer   
+00001000                            18  ;-------------------------------------------------------
+00001000                            19  
+00001000                            20  ;-------------------------------------------------------
+00001000                            21  ; START OF GAME - INITIALISE RESOURCES
+00001000                            22  ;-------------------------------------------------------
+00001000                            23  START:
+00001000  163C 0008                 24      MOVE.B  #8,D3               ; Turns Remaining = 8
+00001004  4284                      25      CLR.L   D4                  ; Evidence Points = 0
+00001006  6100 02A4                 26      BSR     PRINT_INTRO         ; Print the opening story
+0000100A                            27  
+0000100A                            28  ;-------------------------------------------------------
+0000100A                            29  ; MAIN MENU
+0000100A                            30  ;-------------------------------------------------------
+0000100A                            31  MAIN_MENU:
+0000100A  6100 025A                 32      BSR     SHOW_STATUS         ; Show Turns and Evidence before menu
+0000100E  6100 02AA                 33      BSR     ENDL
+00001012  43F9 00001465             34      LEA     MENU_MSG,A1
+00001018  103C 000E                 35      MOVE.B  #14,D0
+0000101C  4E4F                      36      TRAP    #15
+0000101E                            37  
+0000101E  103C 0004                 38      MOVE.B  #4,D0               ; Read integer into D1
+00001022  4E4F                      39      TRAP    #15
+00001024                            40  
+00001024                            41      ; --- Error Handling: Range Check (0 to 7) ---
+00001024  B23C 0000                 42      CMP.B   #0,D1               ; Check if input is less than 0
+00001028  6D00 029E                 43      BLT     INVALID_INPUT
+0000102C  B23C 0007                 44      CMP.B   #7,D1               ; Check if input is greater than 7
+00001030  6E00 0296                 45      BGT     INVALID_INPUT
+00001034                            46  
+00001034                            47      ; --- Branching based on valid player input ---
+00001034  B23C 0001                 48      CMP.B   #1,D1
+00001038  6700 003C                 49      BEQ     EXAMINE_SCENE
+0000103C  B23C 0002                 50      CMP.B   #2,D1
+00001040  6700 0066                 51      BEQ     EXAMINE_LIBRARY
+00001044  B23C 0003                 52      CMP.B   #3,D1
+00001048  6700 0090                 53      BEQ     EXAMINE_KITCHEN
+0000104C  B23C 0004                 54      CMP.B   #4,D1
+00001050  6700 00BA                 55      BEQ     TALK_ELEANOR
+00001054  B23C 0005                 56      CMP.B   #5,D1
+00001058  6700 00CA                 57      BEQ     TALK_JULIAN
+0000105C  B23C 0006                 58      CMP.B   #6,D1
+00001060  6700 00DA                 59      BEQ     TALK_MARTHA
+00001064  B23C 0007                 60      CMP.B   #7,D1
+00001068  6700 0104                 61      BEQ     CHECK_EVIDENCE      ; Gate accusation on evidence count
+0000106C  B23C 0000                 62      CMP.B   #0,D1
+00001070  6700 018A                 63      BEQ     QUIT_GAME
+00001074                            64  
+00001074                            65      ; If invalid input, loop back (no turn cost for bad input)
+00001074  6094                      66      BRA     MAIN_MENU
+00001076                            67  
+00001076                            68  ;-------------------------------------------------------
+00001076                            69  ; INVESTIGATION SUBROUTINES
+00001076                            70  ; Each action costs 1 turn. Scenes give +2 evidence.
+00001076                            71  ;-------------------------------------------------------
+00001076                            72  EXAMINE_SCENE:
+00001076  6100 01E4                 73      BSR     COST_TURN           ; -1 turn for this action
+0000107A  6100 023E                 74      BSR     ENDL
+0000107E  43F9 0000181E             75      LEA     SCENE_MSG,A1
+00001084  103C 000E                 76      MOVE.B  #14,D0
+00001088  4E4F                      77      TRAP    #15
+0000108A  5404                      78      ADD.B   #2,D4               ; +2 evidence points
+0000108C  B83C 000A                 79      CMP.B   #10,D4              ; Cap evidence at 10
+00001090  6F00 0006                 80      BLE     SCENE_DONE
+00001094  183C 000A                 81      MOVE.B  #10,D4
+00001098                            82  SCENE_DONE:
+00001098  43F9 000016C4             83      LEA     GAINED_MSG,A1       ; Print "+2 Evidence Points gained!"
+0000109E  103C 000E                 84      MOVE.B  #14,D0
+000010A2  4E4F                      85      TRAP    #15
+000010A4  6000 FF64                 86      BRA     MAIN_MENU
+000010A8                            87  
+000010A8                            88  EXAMINE_LIBRARY:
+000010A8  6100 01B2                 89      BSR     COST_TURN
+000010AC  6100 020C                 90      BSR     ENDL
+000010B0  43F9 000018A5             91      LEA     LIBRARY_MSG,A1
+000010B6  103C 000E                 92      MOVE.B  #14,D0
+000010BA  4E4F                      93      TRAP    #15
+000010BC  5404                      94      ADD.B   #2,D4               ; +2 evidence points
+000010BE  B83C 000A                 95      CMP.B   #10,D4
+000010C2  6F00 0006                 96      BLE     LIBRARY_DONE
+000010C6  183C 000A                 97      MOVE.B  #10,D4
+000010CA                            98  LIBRARY_DONE:
+000010CA  43F9 000016C4             99      LEA     GAINED_MSG,A1
+000010D0  103C 000E                100      MOVE.B  #14,D0
+000010D4  4E4F                     101      TRAP    #15
+000010D6  6000 FF32                102      BRA     MAIN_MENU
+000010DA                           103  
+000010DA                           104  EXAMINE_KITCHEN:
+000010DA  6100 0180                105      BSR     COST_TURN
+000010DE  6100 01DA                106      BSR     ENDL
+000010E2  43F9 0000193F            107      LEA     KITCHEN_MSG,A1
+000010E8  103C 000E                108      MOVE.B  #14,D0
+000010EC  4E4F                     109      TRAP    #15
+000010EE  5404                     110      ADD.B   #2,D4               ; +2 evidence points
+000010F0  B83C 000A                111      CMP.B   #10,D4
+000010F4  6F00 0006                112      BLE     KITCHEN_DONE
+000010F8  183C 000A                113      MOVE.B  #10,D4
+000010FC                           114  KITCHEN_DONE:
+000010FC  43F9 000016C4            115      LEA     GAINED_MSG,A1
+00001102  103C 000E                116      MOVE.B  #14,D0
+00001106  4E4F                     117      TRAP    #15
+00001108  6000 FF00                118      BRA     MAIN_MENU
+0000110C                           119  
+0000110C                           120  ;-------------------------------------------------------
+0000110C                           121  ; INTERROGATION SUBROUTINES
+0000110C                           122  ; Each costs 1 turn. Martha gives +1 bonus evidence.
+0000110C                           123  ;-------------------------------------------------------
+0000110C                           124  TALK_ELEANOR:
+0000110C  6100 014E                125      BSR     COST_TURN
+00001110  6100 01A8                126      BSR     ENDL
+00001114  43F9 000019E4            127      LEA     ELEANOR_MSG,A1
+0000111A  103C 000E                128      MOVE.B  #14,D0
+0000111E  4E4F                     129      TRAP    #15
+00001120  6000 FEE8                130      BRA     MAIN_MENU
+00001124                           131  
+00001124                           132  TALK_JULIAN:
+00001124  6100 0136                133      BSR     COST_TURN
+00001128  6100 0190                134      BSR     ENDL
+0000112C  43F9 00001A54            135      LEA     JULIAN_MSG,A1
+00001132  103C 000E                136      MOVE.B  #14,D0
+00001136  4E4F                     137      TRAP    #15
+00001138  6000 FED0                138      BRA     MAIN_MENU
+0000113C                           139  
+0000113C                           140  TALK_MARTHA:
+0000113C  6100 011E                141      BSR     COST_TURN
+00001140  6100 0178                142      BSR     ENDL
+00001144  43F9 00001AB9            143      LEA     MARTHA_MSG,A1
+0000114A  103C 000E                144      MOVE.B  #14,D0
+0000114E  4E4F                     145      TRAP    #15
+00001150  5204                     146      ADD.B   #1,D4               ; +1 bonus evidence (key witness)
+00001152  B83C 000A                147      CMP.B   #10,D4
+00001156  6F00 0006                148      BLE     MARTHA_DONE
+0000115A  183C 000A                149      MOVE.B  #10,D4
+0000115E                           150  MARTHA_DONE:
+0000115E  43F9 000016E4            151      LEA     MARTHA_BONUS_MSG,A1 ; Print "Key detail noted! +1 Evidence"
+00001164  103C 000E                152      MOVE.B  #14,D0
+00001168  4E4F                     153      TRAP    #15
+0000116A  6000 FE9E                154      BRA     MAIN_MENU
+0000116E                           155  
+0000116E                           156  ;-------------------------------------------------------
+0000116E                           157  ; EVIDENCE GATE - CHECK BEFORE ALLOWING ACCUSATION
+0000116E                           158  ;-------------------------------------------------------
+0000116E                           159  CHECK_EVIDENCE:
+0000116E  B83C 0004                160      CMP.B   #4,D4               ; Need at least 4 evidence points
+00001172  6C00 0016                161      BGE     ACCUSE_SUSPECT      ; Enough evidence -> proceed
+00001176  6100 0142                162      BSR     ENDL
+0000117A  43F9 0000170E            163      LEA     LOW_EVIDENCE_MSG,A1 ; Not enough evidence yet
+00001180  103C 000E                164      MOVE.B  #14,D0
+00001184  4E4F                     165      TRAP    #15
+00001186  6000 FE82                166      BRA     MAIN_MENU
+0000118A                           167  
+0000118A                           168  ;-------------------------------------------------------
+0000118A                           169  ; THE ACCUSATION (END OF GAME LOGIC)
+0000118A                           170  ;-------------------------------------------------------
+0000118A                           171  ACCUSE_SUSPECT:
+0000118A  6100 012E                172      BSR     ENDL
+0000118E  43F9 00001B38            173      LEA     ACCUSE_MSG,A1
+00001194  103C 000E                174      MOVE.B  #14,D0
+00001198  4E4F                     175      TRAP    #15
+0000119A                           176  
+0000119A  103C 0004                177      MOVE.B  #4,D0               ; Read integer
+0000119E  4E4F                     178      TRAP    #15
+000011A0                           179  
+000011A0                           180      ; --- Error Handling: Valid suspect range (1 to 3) ---
+000011A0  B23C 0001                181      CMP.B   #1,D1
+000011A4  6D00 0134                182      BLT     INVALID_ACCUSE
+000011A8  B23C 0003                183      CMP.B   #3,D1
+000011AC  6E00 012C                184      BGT     INVALID_ACCUSE
+000011B0                           185  
+000011B0                           186      ; The killer is Martha (option 3)
+000011B0  B23C 0003                187      CMP.B   #3,D1
+000011B4  6700 0006                188      BEQ     WIN_GAME
+000011B8  6000 0016                189      BRA     LOSE_GAME           ; Wrong suspect -> offer restart
+000011BC                           190  
+000011BC                           191  WIN_GAME:
+000011BC  6100 00FC                192      BSR     ENDL
+000011C0  43F9 00001B6F            193      LEA     WIN_MSG,A1
+000011C6  103C 000E                194      MOVE.B  #14,D0
+000011CA  4E4F                     195      TRAP    #15
+000011CC  FFFF FFFF                196      SIMHALT                     ; End program
+000011D0                           197  
+000011D0                           198  ;-------------------------------------------------------
+000011D0                           199  ; LOSE_GAME
+000011D0                           200  ; Prints the failure message then calls RESTART_GAME
+000011D0                           201  ; to give the player the option to try again.
+000011D0                           202  ;-------------------------------------------------------
+000011D0                           203  LOSE_GAME:
+000011D0  6100 00E8                204      BSR     ENDL
+000011D4  43F9 00001BBE            205      LEA     LOSE_MSG,A1
+000011DA  103C 000E                206      MOVE.B  #14,D0
+000011DE  4E4F                     207      TRAP    #15
+000011E0  6100 001E                208      BSR     RESTART_GAME        ; Offer restart rather than halting
+000011E4  FFFF FFFF                209      SIMHALT                     ; Only reached if player chose No
+000011E8                           210  
+000011E8                           211  TIME_UP:
+000011E8  6100 00D0                212      BSR     ENDL
+000011EC  43F9 0000175E            213      LEA     TIMEUP_MSG,A1       ; Print time expired message
+000011F2  103C 000E                214      MOVE.B  #14,D0
+000011F6  4E4F                     215      TRAP    #15
+000011F8  FFFF FFFF                216      SIMHALT                     ; Killer escapes - no restart offered
+000011FC                           217  
+000011FC                           218  QUIT_GAME:
+000011FC  FFFF FFFF                219      SIMHALT
+00001200                           220  
+00001200                           221  ;-------------------------------------------------------
+00001200                           222  ; RESTART_GAME SUBROUTINE
+00001200                           223  ; Called after a wrong accusation (LOSE_GAME).
+00001200                           224  ; Asks the player if they want to try again.
+00001200                           225  ; Input:  D1 must be 1 (Yes) or 2 (No)
+00001200                           226  ; Output: Resets D3/D4 and jumps to MAIN_MENU (Yes)
+00001200                           227  ;         Returns to caller for SIMHALT (No)
+00001200                           228  ; Error:  Any value outside 1-2 re-prompts the question.
+00001200                           229  ;-------------------------------------------------------
+00001200                           230  RESTART_GAME:
+00001200  6100 00B8                231      BSR     ENDL
+00001204  43F9 000017AC            232      LEA     RESTART_MSG,A1      ; Print "Try again? (1=Yes, 2=No):"
+0000120A  103C 000E                233      MOVE.B  #14,D0
+0000120E  4E4F                     234      TRAP    #15
+00001210                           235  
+00001210  103C 0004                236      MOVE.B  #4,D0               ; Read integer into D1
+00001214  4E4F                     237      TRAP    #15
+00001216                           238  
+00001216                           239      ; --- Error Handling: Valid range (1 to 2) ---
+00001216  B23C 0001                240      CMP.B   #1,D1
+0000121A  6D00 002E                241      BLT     RESTART_INVALID
+0000121E  B23C 0002                242      CMP.B   #2,D1
+00001222  6E00 0026                243      BGT     RESTART_INVALID
+00001226                           244  
+00001226  B23C 0001                245      CMP.B   #1,D1
+0000122A  6700 0004                246      BEQ     RESTART_YES         ; Player chose Yes -> reset and replay
+0000122E  4E75                     247      RTS                         ; Player chose No -> return to LOSE_GAME -> SIMHALT
+00001230                           248  
+00001230                           249  RESTART_YES:
+00001230  163C 0008                250      MOVE.B  #8,D3               ; Reset Turns Remaining to 8
+00001234  4284                     251      CLR.L   D4                  ; Reset Evidence Points to 0
+00001236  6100 0082                252      BSR     ENDL
+0000123A  43F9 000017F0            253      LEA     RESTART_CONFIRM,A1  ; Print "Starting new case..."
+00001240  103C 000E                254      MOVE.B  #14,D0
+00001244  4E4F                     255      TRAP    #15
+00001246  6000 FDC2                256      BRA     MAIN_MENU           ; Jump back to main menu (bypass START/PRINT_INTRO)
+0000124A                           257  
+0000124A                           258  RESTART_INVALID:
+0000124A  6100 006E                259      BSR     ENDL
+0000124E  43F9 00001C0F            260      LEA     ERR_MSG,A1          ; Print invalid selection message
+00001254  103C 000E                261      MOVE.B  #14,D0
+00001258  4E4F                     262      TRAP    #15
+0000125A  60A4                     263      BRA     RESTART_GAME        ; Re-prompt the restart question
+0000125C                           264  
+0000125C                           265  ;-------------------------------------------------------
+0000125C                           266  ; COST_TURN SUBROUTINE
+0000125C                           267  ; Deducts 1 from D3 (turns remaining).
+0000125C                           268  ; If D3 reaches 0, jumps to TIME_UP (game over).
+0000125C                           269  ; Called at the start of every investigation/interrogation.
+0000125C                           270  ;-------------------------------------------------------
+0000125C                           271  COST_TURN:
+0000125C  5303                     272      SUB.B   #1,D3               ; -1 turn
+0000125E  B63C 0000                273      CMP.B   #0,D3               ; Have all turns been used?
+00001262  6784                     274      BEQ     TIME_UP             ; Yes -> game over
+00001264  4E75                     275      RTS
+00001266                           276  
+00001266                           277  ;-------------------------------------------------------
+00001266                           278  ; SHOW_STATUS SUBROUTINE
+00001266                           279  ; Prints Turns Remaining and Evidence Points before each menu.
+00001266                           280  ; Uses TRAP #15 task 3 to print the integer values in D3/D4.
+00001266                           281  ;-------------------------------------------------------
+00001266                           282  SHOW_STATUS:
+00001266  43F9 00001662            283      LEA     STATUS_HDR,A1       ; "--- DETECTIVE STATUS ---"
+0000126C  103C 000E                284      MOVE.B  #14,D0
+00001270  4E4F                     285      TRAP    #15
+00001272  43F9 0000167F            286      LEA     TURN_LBL,A1         ; "Turns Remaining : "
+00001278  103C 000E                287      MOVE.B  #14,D0
+0000127C  4E4F                     288      TRAP    #15
+0000127E  1203                     289      MOVE.B  D3,D1               ; Load turns into D1 for printing
+00001280  103C 0003                290      MOVE.B  #3,D0               ; TRAP task 3 = print integer in D1
+00001284  4E4F                     291      TRAP    #15
+00001286  6100 0032                292      BSR     ENDL
+0000128A  43F9 00001693            293      LEA     EVID_LBL,A1         ; "Evidence Points  : "
+00001290  103C 000E                294      MOVE.B  #14,D0
+00001294  4E4F                     295      TRAP    #15
+00001296  1204                     296      MOVE.B  D4,D1               ; Load evidence into D1 for printing
+00001298  103C 0003                297      MOVE.B  #3,D0               ; Print integer
+0000129C  4E4F                     298      TRAP    #15
+0000129E  43F9 000016A7            299      LEA     STATUS_FTR,A1       ; Closing separator line
+000012A4  103C 000E                300      MOVE.B  #14,D0
+000012A8  4E4F                     301      TRAP    #15
+000012AA  4E75                     302      RTS
+000012AC                           303  
+000012AC                           304  ;-------------------------------------------------------
+000012AC                           305  ; UTILITIES & ERROR HANDLING
+000012AC                           306  ;-------------------------------------------------------
+000012AC                           307  PRINT_INTRO:
+000012AC  43F9 000012EF            308      LEA     INTRO_MSG,A1
+000012B2  103C 000E                309      MOVE.B  #14,D0
+000012B6  4E4F                     310      TRAP    #15
+000012B8  4E75                     311      RTS
+000012BA                           312  
+000012BA                           313  ENDL:
+000012BA  43F9 000012EC            314      LEA     CRLF,A1
+000012C0  103C 000E                315      MOVE.B  #14,D0
+000012C4  4E4F                     316      TRAP    #15
+000012C6  4E75                     317      RTS
+000012C8                           318  
+000012C8                           319  ; --- Error handler for MAIN_MENU ---
+000012C8                           320  ; Triggered when D1 is outside range 0-7
+000012C8                           321  ; Prints error message and loops back to re-prompt (no turn cost)
+000012C8                           322  INVALID_INPUT:
+000012C8  61F0                     323      BSR     ENDL
+000012CA  43F9 00001C0F            324      LEA     ERR_MSG,A1
+000012D0  103C 000E                325      MOVE.B  #14,D0
+000012D4  4E4F                     326      TRAP    #15
+000012D6  6000 FD32                327      BRA     MAIN_MENU
+000012DA                           328  
+000012DA                           329  ; --- Error handler for ACCUSE_SUSPECT ---
+000012DA                           330  ; Triggered when D1 is outside range 1-3
+000012DA                           331  ; Prints error message and loops back to re-prompt
+000012DA                           332  INVALID_ACCUSE:
+000012DA  61DE                     333      BSR     ENDL
+000012DC  43F9 00001C0F            334      LEA     ERR_MSG,A1
+000012E2  103C 000E                335      MOVE.B  #14,D0
+000012E6  4E4F                     336      TRAP    #15
+000012E8  6000 FEA0                337      BRA     ACCUSE_SUSPECT
+000012EC                           338  
+000012EC                           339  ;-------------------------------------------------------
+000012EC                           340  ; DATA SECTION (STRINGS)
+000012EC                           341  ;-------------------------------------------------------
+000012EC= 0D 0A 00                 342  CRLF:           DC.B    13,10,0
+000012EF                           343  
+000012EF= 20 5F 5F 5F 5F 5F ...    344  INTRO_MSG:      DC.B    ' ______________________________________',13,10
+00001318= 7C 3D 3D 3D 3D 3D ...    345                  DC.B    '|======================================|',13,10
+00001342= 7C 54 48 45 20 20 ...    346                  DC.B    '|THE  MYSTERY  OF  BLACKWOOD  CABIN    |',13,10
+0000136C= 7C 3D 3D 3D 3D 3D ...    347                  DC.B    '|======================================|',13,10
+00001396= 7C 5F 5F 5F 5F 5F ...    348                  DC.B    '|______________________________________|',13,10
+000013C0= 20 41 72 74 68 75 ...    349                  DC.B    ' Arthur Pendelton is dead. The blizzard',13,10
+000013E9= 20 68 6F 77 6C 73 ...    350                  DC.B    ' howls outside. You are the detective. ',13,10
+00001412= 20 59 6F 75 20 68 ...    351                  DC.B    ' You have 8 turns before the killer    ',13,10
+0000143B= 20 73 6C 69 70 73 ...    352                  DC.B    ' slips away into the storm!            ',13,10,0
+00001465                           353  
+00001465= 0D 0A 3D 3D 3D 3D ...    354  MENU_MSG:       DC.B    13,10,'========================================',13,10
+00001491= 7C 20 20 20 20 20 ...    355                  DC.B    '|          WHAT WILL YOU DO?           |',13,10
+000014BB= 3D 3D 3D 3D 3D 3D ...    356                  DC.B    '========================================',13,10
+000014E5= 20 2D 2D 2D 20 49 ...    357                  DC.B    ' --- INVESTIGATE ---',13,10
+000014FB= 20 20 31 2E 20 45 ...    358                  DC.B    '  1. Examine Crime Scene (Study)',13,10
+0000151D= 20 20 32 2E 20 45 ...    359                  DC.B    '  2. Examine the Library',13,10
+00001537= 20 20 33 2E 20 45 ...    360                  DC.B    '  3. Examine the Kitchen',13,10
+00001551= 20 2D 2D 2D 20 49 ...    361                  DC.B    ' --- INTERROGATE ---',13,10
+00001567= 20 20 34 2E 20 54 ...    362                  DC.B    '  4. Talk to Eleanor (The Wife)',13,10
+00001588= 20 20 35 2E 20 54 ...    363                  DC.B    '  5. Talk to Julian  (The Nephew)',13,10
+000015AB= 20 20 36 2E 20 54 ...    364                  DC.B    '  6. Talk to Martha  (The Housekeeper)',13,10
+000015D3= 20 2D 2D 2D 20 41 ...    365                  DC.B    ' --- ACTIONS ---',13,10
+000015E5= 20 20 37 2E 20 4D ...    366                  DC.B    '  7. MAKE AN ACCUSATION! (needs 4 evidence)',13,10
+00001612= 20 20 30 2E 20 51 ...    367                  DC.B    '  0. Quit Case',13,10
+00001622= 3D 3D 3D 3D 3D 3D ...    368                  DC.B    '========================================',13,10
+0000164C= 20 45 6E 74 65 72 ...    369                  DC.B    ' Enter Choice (0-7): ',0
+00001662                           370  
+00001662                           371  ; --- Status display strings ---
+00001662= 0D 0A 2D 2D 2D 20 ...    372  STATUS_HDR:     DC.B    13,10,'--- DETECTIVE STATUS ---',13,10,0
+0000167F= 20 54 75 72 6E 73 ...    373  TURN_LBL:       DC.B    ' Turns Remaining : ',0
+00001693= 20 45 76 69 64 65 ...    374  EVID_LBL:       DC.B    ' Evidence Points : ',0
+000016A7= 0D 0A 2D 2D 2D 2D ...    375  STATUS_FTR:     DC.B    13,10,'------------------------',13,10,0
+000016C4                           376  
+000016C4                           377  ; --- Feedback strings ---
+000016C4= 3E 3E 20 2B 32 20 ...    378  GAINED_MSG:     DC.B    '>> +2 Evidence Points gained!',13,10,0
+000016E4= 3E 3E 20 4B 65 79 ...    379  MARTHA_BONUS_MSG: DC.B  '>> Key detail noted! +1 Evidence Point.',13,10,0
+0000170E= 21 21 20 4E 6F 74 ...    380  LOW_EVIDENCE_MSG: DC.B  '!! Not enough evidence to accuse yet.',13,10
+00001735= 21 21 20 4B 65 65 ...    381                  DC.B    '!! Keep investigating (need 4 points).',13,10,0
+0000175E= 21 21 20 54 69 6D ...    382  TIMEUP_MSG:     DC.B    '!! Time has run out. The killer escapes',13,10
+00001787= 20 20 20 69 6E 74 ...    383                  DC.B    '   into the blizzard. CASE FAILED.',13,10,0
+000017AC                           384  
+000017AC                           385  ; --- Restart strings ---
+000017AC= 0D 0A 54 68 65 20 ...    386  RESTART_MSG:    DC.B    13,10,'The real killer is still out there...',13,10
+000017D5= 54 72 79 20 61 67 ...    387                  DC.B    'Try again? (1=Yes, 2=No): ',0
+000017F0= 3E 3E 20 53 74 61 ...    388  RESTART_CONFIRM:DC.B    '>> Starting new case. Good luck, detective.',13,10,0
+0000181E                           389  
+0000181E                           390  ; --- Scene strings ---
+0000181E= 5B 53 54 55 44 59 ...    391  SCENE_MSG:      DC.B    '[STUDY] Arthur is slumped over his desk.',13,10
+00001848= 41 20 73 68 61 74 ...    392                  DC.B    'A shattered teacup lies on the floor.',13,10
+0000186F= 54 68 65 72 65 20 ...    393                  DC.B    'There is a faint smell of bitter almonds (Cyanide).',13,10,0
+000018A5                           394  
+000018A5= 5B 4C 49 42 52 41 ...    395  LIBRARY_MSG:    DC.B    '[LIBRARY] A fire roars in the hearth. On a side table,',13,10
+000018DD= 79 6F 75 20 66 69 ...    396                  DC.B    'you find a freshly torn document. It looks like a will',13,10
+00001915= 63 75 74 74 69 6E ...    397                  DC.B    'cutting Eleanor out of the inheritance.',13,10,0
+0000193F                           398  
+0000193F= 5B 4B 49 54 43 48 ...    399  KITCHEN_MSG:    DC.B    '[KITCHEN] The smell of roast beef fills the room.',13,10
+00001972= 4E 65 61 72 20 74 ...    400                  DC.B    'Near the tea kettle, an empty vial labeled "Rat Poison"',13,10
+000019AB= 73 69 74 73 20 6F ...    401                  DC.B    'sits on the counter. The active ingredient is Cyanide.',13,10,0
+000019E4                           402  
+000019E4= 5B 45 4C 45 41 4E ...    403  ELEANOR_MSG:    DC.B    '[ELEANOR] "I was reading in the library. Arthur was furious',13,10
+00001A21= 61 62 6F 75 74 20 ...    404                  DC.B    'about his new book. I stayed far away from him."',13,10,0
+00001A54                           405  
+00001A54= 5B 4A 55 4C 49 41 ...    406  JULIAN_MSG:     DC.B    '[JULIAN] "I was chopping firewood out in the blizzard!',13,10
+00001A8C= 49 20 6F 6E 6C 79 ...    407                  DC.B    'I only came inside when Eleanor screamed."',13,10,0
+00001AB9                           408  
+00001AB9= 5B 4D 41 52 54 48 ...    409  MARTHA_MSG:     DC.B    '[MARTHA] "I was in the kitchen roasting the beef. The master',13,10
+00001AF7= 61 6C 77 61 79 73 ...    410                  DC.B    'always takes his tea alone at 4:00 PM. I left it at his door."',13,10,0
+00001B38                           411  
+00001B38= 0D 0A 57 68 6F 20 ...    412  ACCUSE_MSG:     DC.B    13,10,'Who is the killer? (1=Eleanor, 2=Julian, 3=Martha): ',0
+00001B6F                           413  
+00001B6F= 43 4F 52 52 45 43 ...    414  WIN_MSG:        DC.B    'CORRECT! Martha prepared the tea and poisoned it with cyanide.',13,10
+00001BAF= 43 41 53 45 20 43 ...    415                  DC.B    'CASE CLOSED.',13,10,0
+00001BBE                           416  
+00001BBE= 57 52 4F 4E 47 21 ...    417  LOSE_MSG:       DC.B    'WRONG! You arrested an innocent person. The real killer escaped.',13,10
+00001C00= 43 41 53 45 20 46 ...    418                  DC.B    'CASE FAILED.',13,10,0
+00001C0F                           419  
+00001C0F= 21 21 21 20 49 4E ...    420  ERR_MSG:        DC.B    '!!! INVALID SELECTION: Please enter a valid number !!!',13,10,0
+00001C48                           421  
+00001C48                           422      END START
 
 No errors detected
 No warnings generated
@@ -444,53 +432,53 @@ No warnings generated
 SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
-ACCUSE_MSG          1B39
+ACCUSE_MSG          1B38
 ACCUSE_SUSPECT      118A
 CHECK_EVIDENCE      116E
 COST_TURN           125C
 CRLF                12EC
-ELEANOR_MSG         19E5
+ELEANOR_MSG         19E4
 ENDL                12BA
-ERR_MSG             1C10
-EVID_LBL            1694
+ERR_MSG             1C0F
+EVID_LBL            1693
 EXAMINE_KITCHEN     10DA
 EXAMINE_LIBRARY     10A8
 EXAMINE_SCENE       1076
-GAINED_MSG          16C5
+GAINED_MSG          16C4
 INTRO_MSG           12EF
 INVALID_ACCUSE      12DA
 INVALID_INPUT       12C8
-JULIAN_MSG          1A55
+JULIAN_MSG          1A54
 KITCHEN_DONE        10FC
-KITCHEN_MSG         1940
+KITCHEN_MSG         193F
 LIBRARY_DONE        10CA
-LIBRARY_MSG         18A6
+LIBRARY_MSG         18A5
 LOSE_GAME           11D0
-LOSE_MSG            1BBF
-LOW_EVIDENCE_MSG    170F
+LOSE_MSG            1BBE
+LOW_EVIDENCE_MSG    170E
 MAIN_MENU           100A
-MARTHA_BONUS_MSG    16E5
+MARTHA_BONUS_MSG    16E4
 MARTHA_DONE         115E
-MARTHA_MSG          1ABA
-MENU_MSG            1466
+MARTHA_MSG          1AB9
+MENU_MSG            1465
 PRINT_INTRO         12AC
 QUIT_GAME           11FC
-RESTART_CONFIRM     17F1
+RESTART_CONFIRM     17F0
 RESTART_GAME        1200
 RESTART_INVALID     124A
-RESTART_MSG         17AD
+RESTART_MSG         17AC
 RESTART_YES         1230
 SCENE_DONE          1098
-SCENE_MSG           181F
+SCENE_MSG           181E
 SHOW_STATUS         1266
 START               1000
-STATUS_FTR          16A8
-STATUS_HDR          1663
+STATUS_FTR          16A7
+STATUS_HDR          1662
 TALK_ELEANOR        110C
 TALK_JULIAN         1124
 TALK_MARTHA         113C
-TIMEUP_MSG          175F
+TIMEUP_MSG          175E
 TIME_UP             11E8
-TURN_LBL            1680
+TURN_LBL            167F
 WIN_GAME            11BC
-WIN_MSG             1B70
+WIN_MSG             1B6F
