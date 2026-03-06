@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackwood Cabin — Flowchart</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1a1208;
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(139,58,26,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 85%, rgba(200,148,26,0.10) 0%, transparent 55%);
+  font-family: 'Courier Prime', monospace;
+  min-height: 100vh;
+  padding: 36px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 36px;
+  animation: fadeDown 0.7s ease both;
+}
+header h1 {
+  font-family: 'Special Elite', cursive;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  color: #f0e6c8;
+  letter-spacing: 0.08em;
+  text-shadow: 2px 3px 14px rgba(0,0,0,0.9), 0 0 40px rgba(200,148,26,0.2);
+}
+header p {
+  color: #d4c49a;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  opacity: 0.65;
+}
+
+/* legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 28px;
+  font-size: 0.72rem;
+  color: #d4c49a;
+  letter-spacing: 0.1em;
+}
+.leg-item { display: flex; align-items: center; gap: 7px; }
+.leg-swatch { width: 28px; height: 16px; border: 1.5px solid #1a1208; }
+
+/* SVG container */
+.chart-wrap {
+  background: #f0e6c8;
+  border: 2px solid #1a1208;
+  box-shadow: 6px 7px 0 #c8941a, 0 0 0 1px #d4c49a;
+  max-width: 720px;
+  width: 100%;
+  padding: 24px 16px;
+}
+
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+/* print */
+@media print {
+  body { background: white; padding: 0; }
+  header, .legend { display: none; }
+  .chart-wrap { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+  svg text { font-family: 'Courier New', monospace !important; }
+}
+
+@keyframes fadeDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>☽ The Mystery of Blackwood Cabin ☾</h1>
+  <p>Program Flowchart · M68K Assembly · Easy68K</p>
+</header>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-swatch" style="background:#c8941a;border-radius:50%"></div>Terminal (Start / End)</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#f0e6c8"></div>Process</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#d9e2f3"></div>Decision</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#d4edda"></div>Subroutine</div>
+  <div class="leg-item"><div class="leg-swatch" style="background:#fce4d6"></div>Game Outcome</div>
+</div>
+
+<div class="chart-wrap">
+<svg viewBox="0 0 740 1680" xmlns="http://www.w3.org/2000/svg"
+     font-family="'Courier Prime', 'Courier New', monospace">
+
+  <defs>
+    <!-- arrow marker -->
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#1a1208"/>
+    </marker>
+    <marker id="arr-gold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#c8941a"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#8b3a1a"/>
+    </marker>
+    <!-- drop shadow -->
+    <filter id="sh" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="2" dy="3" stdDeviation="1" flood-color="#1a1208" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- ═══════════════════════════════════════
+       HELPERS: shapes drawn inline below
+  ═══════════════════════════════════════ -->
+
+  <!-- ── START ── pill/terminal at top -->
+  <ellipse cx="340" cy="36" rx="88" ry="24" fill="#c8941a" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="41" text-anchor="middle" font-size="13" font-weight="700" fill="#1a1208">START</text>
+
+  <!-- arrow down -->
+  <line x1="340" y1="60" x2="340" y2="84" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ── INIT: Set D3=8, D4=0 ── process box -->
+  <rect x="220" y="84" width="240" height="44" rx="3" fill="#f0e6c8" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="101" text-anchor="middle" font-size="11.5" fill="#1a1208" font-weight="700">Initialise Resources</text>
+  <text x="340" y="117" text-anchor="middle" font-size="10.5" fill="#6b5a3a">D3 = 8 turns  ·  D4 = 0 evidence</text>
+
+  <line x1="340" y1="128" x2="340" y2="152" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ── PRINT INTRO ── subroutine (double border) -->
+  <rect x="225" y="152" width="230" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <rect x="229" y="156" width="222" height="30" rx="2" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <text x="340" y="174" text-anchor="middle" font-size="11.5" fill="#1a1208" font-weight="700">BSR PRINT_INTRO</text>
+
+  <line x1="340" y1="190" x2="340" y2="214" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ══════════════════════════════════
+       MAIN MENU LOOP START
+  ══════════════════════════════════ -->
+
+  <!-- ── SHOW STATUS ── subroutine -->
+  <rect x="225" y="214" width="230" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <rect x="229" y="218" width="222" height="30" rx="2" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <text x="340" y="236" text-anchor="middle" font-size="11.5" fill="#1a1208" font-weight="700">BSR SHOW_STATUS</text>
+  <text x="340" y="248" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Displays D3 &amp; D4 via TRAP #15</text>
+
+  <line x1="340" y1="252" x2="340" y2="276" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ── PRINT MENU + READ INPUT ── process -->
+  <rect x="210" y="276" width="260" height="44" rx="3" fill="#f0e6c8" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="293" text-anchor="middle" font-size="11.5" fill="#1a1208" font-weight="700">Print Menu &amp; Read Input</text>
+  <text x="340" y="309" text-anchor="middle" font-size="10.5" fill="#6b5a3a">TRAP #15 task 14 / task 4 → D1</text>
+
+  <line x1="340" y1="320" x2="340" y2="344" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- ── VALID INPUT? ── diamond decision -->
+  <!-- diamond: cx=340 cy=368, half-w=100, half-h=32 -->
+  <polygon points="340,336 450,368 340,400 230,368" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="363" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">Valid Input?</text>
+  <text x="340" y="378" text-anchor="middle" font-size="10" fill="#6b5a3a">0 – 7</text>
+
+  <!-- NO branch → left → INVALID_INPUT -->
+  <line x1="230" y1="368" x2="130" y2="368" stroke="#8b3a1a" stroke-width="1.8" marker-end="url(#arr-red)"/>
+  <text x="176" y="362" text-anchor="middle" font-size="10" fill="#8b3a1a" font-weight="700">NO</text>
+  <!-- INVALID_INPUT box -->
+  <rect x="30" y="352" width="100" height="34" rx="3" fill="#fce4d6" stroke="#8b3a1a" stroke-width="1.8" filter="url(#sh)"/>
+  <text x="80" y="366" text-anchor="middle" font-size="10" fill="#8b3a1a" font-weight="700">INVALID</text>
+  <text x="80" y="379" text-anchor="middle" font-size="9.5" fill="#8b3a1a">Print ERR_MSG</text>
+  <!-- loop back up to show_status -->
+  <line x1="80" y1="352" x2="80" y2="228" stroke="#8b3a1a" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="80" y1="228" x2="225" y2="228" stroke="#8b3a1a" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+
+  <!-- YES branch → down -->
+  <line x1="340" y1="400" x2="340" y2="424" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="352" y="416" font-size="10" fill="#2a5c2a" font-weight="700">YES</text>
+
+  <!-- ── DISPATCH DIAMOND ── -->
+  <polygon points="340,424 460,466 340,508 220,466" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="459" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">Menu Choice</text>
+  <text x="340" y="474" text-anchor="middle" font-size="9.5" fill="#6b5a3a">D1 = 1–7 or 0</text>
+
+  <!-- ── QUIT (0) → left far ── -->
+  <line x1="220" y1="466" x2="72" y2="466" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="146" y="460" text-anchor="middle" font-size="9.5" fill="#1a1208" font-weight="700">0 = Quit</text>
+  <ellipse cx="46" cy="466" rx="26" ry="16" fill="#c8941a" stroke="#1a1208" stroke-width="2"/>
+  <text x="46" y="471" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1208">END</text>
+
+  <!-- ═══════════════ LEFT COLUMN: Investigate (1-3) ═══════════════ -->
+  <!-- down-left branch for 1,2,3 -->
+  <line x1="260" y1="500" x2="140" y2="540" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="182" y="530" text-anchor="middle" font-size="9.5" fill="#1a1208" font-weight="700">1–3</text>
+
+  <!-- COST_TURN subroutine -->
+  <rect x="40" y="540" width="200" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <rect x="44" y="544" width="192" height="30" rx="2" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <text x="140" y="558" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">BSR COST_TURN</text>
+  <text x="140" y="571" text-anchor="middle" font-size="9.5" fill="#6b5a3a">D3 – 1</text>
+
+  <line x1="140" y1="578" x2="140" y2="600" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- D3 = 0? -->
+  <polygon points="140,600 220,626 140,652 60,626" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="140" y="621" text-anchor="middle" font-size="10.5" fill="#1a1208" font-weight="700">D3 = 0?</text>
+  <text x="140" y="636" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Time up?</text>
+
+  <!-- YES → TIME UP -->
+  <line x1="60" y1="626" x2="30" y2="626" stroke="#8b3a1a" stroke-width="1.5" marker-end="url(#arr-red)"/>
+  <text x="44" y="620" text-anchor="middle" font-size="9" fill="#8b3a1a" font-weight="700">YES</text>
+  <!-- TIME_UP terminal -->
+  <ellipse cx="18" cy="660" rx="16" ry="14" fill="#fce4d6" stroke="#8b3a1a" stroke-width="2"/>
+  <text x="18" y="655" text-anchor="middle" font-size="8" fill="#8b3a1a" font-weight="700">TIME</text>
+  <text x="18" y="667" text-anchor="middle" font-size="8" fill="#8b3a1a" font-weight="700">UP</text>
+  <line x1="18" y1="626" x2="18" y2="646" stroke="#8b3a1a" stroke-width="1.5" marker-end="url(#arr-red)"/>
+
+  <!-- NO → print clue + add evidence -->
+  <line x1="140" y1="652" x2="140" y2="674" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="152" y="668" font-size="9.5" fill="#2a5c2a" font-weight="700">NO</text>
+
+  <rect x="50" y="674" width="180" height="44" rx="3" fill="#f0e6c8" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="140" y="691" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">Print Scene Clue</text>
+  <text x="140" y="706" text-anchor="middle" font-size="9.5" fill="#6b5a3a">D4 += 2  (cap at 10)</text>
+
+  <!-- loop back to SHOW_STATUS -->
+  <line x1="140" y1="718" x2="140" y2="750" stroke="#1a1208" stroke-width="1.5"/>
+  <line x1="140" y1="750" x2="600" y2="750" stroke="#1a1208" stroke-width="1.5"/>
+  <line x1="600" y1="750" x2="600" y2="228" stroke="#1a1208" stroke-width="1.5"/>
+  <line x1="600" y1="228" x2="455" y2="228" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="370" y="746" text-anchor="middle" font-size="9" fill="#6b5a3a">BRA MAIN_MENU</text>
+
+  <!-- ═══════════════ CENTRE COLUMN: Interrogate (4-6) ═══════════════ -->
+  <line x1="340" y1="508" x2="340" y2="540" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="352" y="530" font-size="9.5" fill="#1a1208" font-weight="700">4–6</text>
+
+  <!-- COST_TURN (centre) -->
+  <rect x="250" y="540" width="180" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <rect x="254" y="544" width="172" height="30" rx="2" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <text x="340" y="558" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">BSR COST_TURN</text>
+  <text x="340" y="571" text-anchor="middle" font-size="9.5" fill="#6b5a3a">D3 – 1</text>
+
+  <line x1="340" y1="578" x2="340" y2="600" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- D3=0? centre -->
+  <polygon points="340,600 410,622 340,644 270,622" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="616" text-anchor="middle" font-size="10" fill="#1a1208" font-weight="700">D3 = 0?</text>
+  <text x="340" y="630" text-anchor="middle" font-size="9" fill="#6b5a3a">Time up?</text>
+
+  <!-- yes → TIME UP (reuse, arrow left) -->
+  <line x1="270" y1="622" x2="36" y2="660" stroke="#8b3a1a" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr-red)"/>
+
+  <!-- no → print statement -->
+  <line x1="340" y1="644" x2="340" y2="666" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="352" y="660" font-size="9.5" fill="#2a5c2a" font-weight="700">NO</text>
+
+  <rect x="244" y="666" width="192" height="52" rx="3" fill="#f0e6c8" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="683" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">Print Statement</text>
+  <text x="340" y="697" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Martha → D4 += 1</text>
+  <text x="340" y="711" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Eleanor / Julian → no change</text>
+
+  <!-- loop back (uses same 750 line) -->
+  <line x1="340" y1="718" x2="340" y2="750" stroke="#1a1208" stroke-width="1.5"/>
+
+  <!-- ═══════════════ RIGHT COLUMN: Accuse (7) ═══════════════ -->
+  <line x1="420" y1="500" x2="530" y2="540" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="490" y="530" text-anchor="middle" font-size="9.5" fill="#1a1208" font-weight="700">7</text>
+
+  <!-- CHECK_EVIDENCE gate -->
+  <polygon points="530,540 630,566 530,592 430,566" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="530" y="560" text-anchor="middle" font-size="10.5" fill="#1a1208" font-weight="700">D4 ≥ 4?</text>
+  <text x="530" y="575" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Evidence gate</text>
+
+  <!-- NO → print warning loop back -->
+  <line x1="530" y1="592" x2="530" y2="616" stroke="#8b3a1a" stroke-width="1.5" marker-end="url(#arr-red)"/>
+  <text x="542" y="608" font-size="9.5" fill="#8b3a1a" font-weight="700">NO</text>
+  <rect x="455" y="616" width="150" height="34" rx="3" fill="#fce4d6" stroke="#8b3a1a" stroke-width="1.8"/>
+  <text x="530" y="630" text-anchor="middle" font-size="10" fill="#8b3a1a" font-weight="700">Need More Evidence</text>
+  <text x="530" y="643" text-anchor="middle" font-size="9" fill="#8b3a1a">Print LOW_EVIDENCE_MSG</text>
+  <!-- loop to main menu -->
+  <line x1="530" y1="650" x2="530" y2="750" stroke="#8b3a1a" stroke-width="1.3" stroke-dasharray="4,3"/>
+
+  <!-- YES → accuse prompt -->
+  <line x1="630" y1="566" x2="660" y2="566" stroke="#1a1208" stroke-width="1.5"/>
+  <line x1="660" y1="566" x2="660" y2="770" stroke="#1a1208" stroke-width="1.5"/>
+  <line x1="660" y1="770" x2="600" y2="770" stroke="#1a1208" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="650" y="560" font-size="9.5" fill="#2a5c2a" font-weight="700">YES</text>
+
+  <!-- ═══════════ ACCUSATION SECTION ═══════════ -->
+  <!-- comes in from right column and centre loop, both at y=770 -->
+  <!-- ACCUSE_SUSPECT box (centred, y=770) -->
+  <rect x="200" y="770" width="280" height="44" rx="3" fill="#f0e6c8" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="787" text-anchor="middle" font-size="11.5" fill="#1a1208" font-weight="700">Accusation Prompt</text>
+  <text x="340" y="803" text-anchor="middle" font-size="10" fill="#6b5a3a">Read suspect (1=Eleanor 2=Julian 3=Martha)</text>
+
+  <line x1="340" y1="814" x2="340" y2="838" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Valid 1-3? -->
+  <polygon points="340,838 450,866 340,894 230,866" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="861" text-anchor="middle" font-size="10.5" fill="#1a1208" font-weight="700">Valid Input?</text>
+  <text x="340" y="876" text-anchor="middle" font-size="9.5" fill="#6b5a3a">1 – 3</text>
+
+  <!-- NO → INVALID_ACCUSE -->
+  <line x1="450" y1="866" x2="580" y2="866" stroke="#8b3a1a" stroke-width="1.5" marker-end="url(#arr-red)"/>
+  <text x="514" y="860" text-anchor="middle" font-size="9.5" fill="#8b3a1a" font-weight="700">NO</text>
+  <rect x="580" y="850" width="88" height="34" rx="3" fill="#fce4d6" stroke="#8b3a1a" stroke-width="1.8"/>
+  <text x="624" y="864" text-anchor="middle" font-size="10" fill="#8b3a1a" font-weight="700">INVALID</text>
+  <text x="624" y="877" text-anchor="middle" font-size="9" fill="#8b3a1a">ACCUSE</text>
+  <!-- loop back to accusation prompt -->
+  <line x1="624" y1="850" x2="624" y2="792" stroke="#8b3a1a" stroke-width="1.3" stroke-dasharray="4,3"/>
+  <line x1="624" y1="792" x2="480" y2="792" stroke="#8b3a1a" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#arr-red)"/>
+
+  <!-- YES → correct? -->
+  <line x1="340" y1="894" x2="340" y2="918" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="352" y="910" font-size="9.5" fill="#2a5c2a" font-weight="700">YES</text>
+
+  <!-- Martha? diamond -->
+  <polygon points="340,918 450,952 340,986 230,952" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="340" y="946" text-anchor="middle" font-size="11" fill="#1a1208" font-weight="700">D1 = 3?</text>
+  <text x="340" y="961" text-anchor="middle" font-size="9.5" fill="#6b5a3a">Martha?</text>
+
+  <!-- YES WIN -->
+  <line x1="340" y1="986" x2="340" y2="1012" stroke="#2a5c2a" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="352" y="1002" font-size="9.5" fill="#2a5c2a" font-weight="700">YES</text>
+
+  <rect x="210" y="1012" width="260" height="44" rx="3" fill="#d4edda" stroke="#2a5c2a" stroke-width="2.5" filter="url(#sh)"/>
+  <text x="340" y="1029" text-anchor="middle" font-size="12" fill="#1a3a1a" font-weight="700">WIN — Case Closed!</text>
+  <text x="340" y="1045" text-anchor="middle" font-size="10" fill="#2a5c2a">Print WIN_MSG → SIMHALT</text>
+
+  <line x1="340" y1="1056" x2="340" y2="1078" stroke="#2a5c2a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <ellipse cx="340" cy="1094" rx="60" ry="20" fill="#c8941a" stroke="#1a1208" stroke-width="2"/>
+  <text x="340" y="1099" text-anchor="middle" font-size="12" font-weight="700" fill="#1a1208">SIMHALT</text>
+
+  <!-- NO LOSE -->
+  <line x1="230" y1="952" x2="160" y2="952" stroke="#8b3a1a" stroke-width="2" marker-end="url(#arr-red)"/>
+  <text x="192" y="946" text-anchor="middle" font-size="9.5" fill="#8b3a1a" font-weight="700">NO</text>
+
+  <rect x="60" y="936" width="100" height="44" rx="3" fill="#fce4d6" stroke="#8b3a1a" stroke-width="2.5" filter="url(#sh)"/>
+  <text x="110" y="953" text-anchor="middle" font-size="11" fill="#8b3a1a" font-weight="700">LOSE</text>
+  <text x="110" y="967" text-anchor="middle" font-size="9" fill="#8b3a1a">Wrong suspect</text>
+  <text x="110" y="979" text-anchor="middle" font-size="9" fill="#8b3a1a">Print LOSE_MSG</text>
+
+  <line x1="110" y1="980" x2="110" y2="1004" stroke="#8b3a1a" stroke-width="1.8" marker-end="url(#arr-red)"/>
+
+  <!-- RESTART_GAME subroutine -->
+  <rect x="60" y="1004" width="100" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <rect x="64" y="1008" width="92" height="30" rx="2" fill="none" stroke="#1a1208" stroke-width="1"/>
+  <text x="110" y="1021" text-anchor="middle" font-size="10" fill="#1a1208" font-weight="700">BSR</text>
+  <text x="110" y="1034" text-anchor="middle" font-size="10" fill="#1a1208" font-weight="700">RESTART_GAME</text>
+
+  <line x1="110" y1="1042" x2="110" y2="1066" stroke="#1a1208" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Restart? diamond - centred at x=110, safely inside viewBox -->
+  <polygon points="110,1066 200,1096 110,1126 20,1096" fill="#d9e2f3" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="110" y="1090" text-anchor="middle" font-size="10.5" fill="#1a1208" font-weight="700">Try Again?</text>
+  <text x="110" y="1106" text-anchor="middle" font-size="9.5" fill="#6b5a3a">1=Yes 2=No</text>
+
+  <!-- YES → reset box, placed below the diamond, centred -->
+  <line x1="200" y1="1096" x2="300" y2="1096" stroke="#2a5c2a" stroke-width="1.8" marker-end="url(#arr)"/>
+  <text x="248" y="1090" text-anchor="middle" font-size="9.5" fill="#2a5c2a" font-weight="700">YES</text>
+  <rect x="300" y="1078" width="170" height="38" rx="3" fill="#d4edda" stroke="#1a1208" stroke-width="2" filter="url(#sh)"/>
+  <text x="385" y="1095" text-anchor="middle" font-size="10.5" fill="#1a1208" font-weight="700">Reset D3=8, D4=0</text>
+  <text x="385" y="1110" text-anchor="middle" font-size="9.5" fill="#6b5a3a">BRA MAIN_MENU</text>
+  <!-- arrow back up to show_status along right edge -->
+  <line x1="470" y1="1096" x2="650" y2="1096" stroke="#2a5c2a" stroke-width="1.5"/>
+  <line x1="650" y1="1096" x2="650" y2="228" stroke="#2a5c2a" stroke-width="1.5"/>
+  <line x1="650" y1="228" x2="455" y2="228" stroke="#2a5c2a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- NO → SIMHALT -->
+  <line x1="110" y1="1126" x2="110" y2="1150" stroke="#8b3a1a" stroke-width="1.8" marker-end="url(#arr-red)"/>
+  <text x="122" y="1144" font-size="9.5" fill="#8b3a1a" font-weight="700">NO</text>
+  <ellipse cx="110" cy="1168" rx="56" ry="22" fill="#c8941a" stroke="#1a1208" stroke-width="2"/>
+  <text x="110" y="1173" text-anchor="middle" font-size="12" font-weight="700" fill="#1a1208">SIMHALT</text>
+
+  <!-- ═══ CAPTION LABELS ═══ -->
+  <text x="140" y="528" text-anchor="middle" font-size="9" fill="#6b5a3a" font-style="italic">Investigate (1–3)</text>
+  <text x="340" y="528" text-anchor="middle" font-size="9" fill="#6b5a3a" font-style="italic">Interrogate (4–6)</text>
+  <text x="528" y="528" text-anchor="middle" font-size="9" fill="#6b5a3a" font-style="italic">Accuse (7)</text>
+
+</svg>
+</div>
+
+</body>
+</html>
