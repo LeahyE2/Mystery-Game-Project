@@ -16,4 +16,4 @@ The menu invites players to become an investigator, examine and collect clues as
 [Watch the video](https://github.com/LeahyE2/Mystery-Game-Project/raw/refs/heads/main/Video%20Project%201.mp4)
 
 ## Flowchart
-![image](https://github.com/LeahyE2/Mystery-GameProject/blob/main/blackwood_flowchart_v2%20(1).html)
+(https://github.com/LeahyE2/Mystery-GameProject/blob/main/blackwood_flowchart_v2%20(1).html)
