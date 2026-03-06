@@ -1,5 +1,7 @@
 ### **🕯️ The Mystery of Blackwood Cabin**
 
+![image](https://github.com/LeahyE2/Mystery-Game-Project/blob/main/Screenshot%202026-03-05%20185500.png)
+
 # A Menu based detective game written in Motorola 68000 Assembly
 
 ## Overview of the Game
