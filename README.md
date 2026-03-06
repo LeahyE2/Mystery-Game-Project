@@ -9,6 +9,6 @@ The Mystery of Blackwood Cabin is a text bsaed detective game built entirely in 
 The game demonstrates core assembly programming concepts including subroutine calls (BSR/RTS), input validation with range checks, conditional branching, and structured string output via TRAP calls.
 
 ## Game play
-The menu invites players to become an investigator, examine and collect clues as to who the killer could be. Following this once all clues are collected the player must make an accusation as to who the killer is.
+The menu invites players to become an investigator, examine and collect clues as to who the killer could be. Following this once all clues are collected the player must make an accusation as to who the killer is. Before an accusation can be made the detective must accumulate clues as to the killer's identity. Once accumulated the detective is invited to accuse. 
 
 
